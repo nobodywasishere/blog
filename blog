@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+import os, sys
+import re
+import subprocess
+import argparse
+from datetime import date
+
+__version__ = 0.1
+
+parser = argparse.ArgumentParser()
+parser.add_argument('post_title', nargs='?', help='Name of the blog post (without date or file ext) (required if not passing -l)')
+parser.add_argument('-p', '--post', help='Post a draft (copy to _posts with date, git add/commit/push)', action='store_true')
+parser.add_argument('--blog_folder', help='Location of blog folder (overrides env variable)')
+parser.add_argument('--editor', help='Editor to open posts with (overrides env variable)')
+parser.add_argument('-l', '--list', help='List all current drafts', action='store_true')
+parser.add_argument('-s', '--serve', help='Serve the blog website with drafts', action='store_true')
+parser.add_argument('-d','--delete', help='Delete a draft', action='store_true')
+parser.add_argument('--version', action='version', version=f"%(prog)s {__version__}")
+args = parser.parse_args()
+
+draft_dir = "_drafts"
+post_dir = "_posts"
+
+try:
+    if not args.blog_folder:
+        blog_folder = os.environ['BLOG_DIR'] + "/"
+    else:
+        blog_folder = args.blog_folder + "/"
+except:
+    print("ERROR: Please set the blog folder through the BLOG_DIR env "
+          "variable or by passing in via --blog-folder")
+    exit(1)
+
+os.chdir(blog_folder)
+
+drafts = subprocess.check_output("ls " + blog_folder + draft_dir, shell=True, universal_newlines=True).split('\n')[:-1]
+
+if args.list:
+    print('\n'.join(drafts))
+    exit(1)
+elif args.serve:
+    os.system("bundle exec jekyll serve --drafts --future --livereload")
+    exit()
+else:
+    if not args.post_title:
+        print("ERROR: post_title is required!")
+        exit(1)
+
+filename = args.post_title + ".md"
+
+if args.delete:
+    if filename not in drafts:
+        print("ERROR: cannot delete a nonexistant file")
+        exit(1)
+
+    if input("Are you sure you want to delete " + args.post_title + "? [y/N] ").lower() in ['y', 'yes']:
+        os.system('rm ' + draft_dir + "/" + filename)
+        print("Deleted " + args.post_title)
+    exit()
+
+
+
+if args.post:
+    if filename not in drafts:
+        print("ERROR: cannot post a nonexistant draft, " + filename)
+        exit(1)
+    else:
+        filename_new = str(date.today()) + "-" + filename
+        os.system("mv " + blog_folder + draft_dir + "/" + filename + " " + blog_folder + post_dir + "/" + filename_new)
+        os.system("git add " + post_dir + "/" + filename_new + " && git commit -m \"Post " + filename_new + "\"")
+        print("Posted " + blog_folder + draft_dir + "/" + filename_new)
+        exit(0)
+
+if filename not in drafts:
+    print("New blog post")
+    if "_template.md" in drafts:
+        print("Copying template")
+        os.system("cp " + draft_dir + "/_template.md " + draft_dir + "/" + filename)
+
+cmd_open = os.environ['EDITOR'] + " " + blog_folder + draft_dir + "/" + filename
+
+print("Opening " + blog_folder + draft_dir + "/" + filename + " with " + os.environ['EDITOR'])
+os.system(cmd_open)
