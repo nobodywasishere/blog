@@ -6,16 +6,17 @@ import subprocess
 import argparse
 from datetime import date
 
-__version__ = 0.1
+__version__ = "0.1.1"
 
 parser = argparse.ArgumentParser()
 parser.add_argument('post_title', nargs='?', help='Name of the blog post (without date or file ext) (required if not passing -l)')
-parser.add_argument('-p', '--post', help='Post a draft (copy to _posts with date, git add/commit/push)', action='store_true')
+parser.add_argument('-p', '--post', help='Post a draft (copy to _posts with date, git add/commit)', action='store_true')
 parser.add_argument('--blog_folder', help='Location of blog folder (overrides env variable)')
 parser.add_argument('--editor', help='Editor to open posts with (overrides env variable)')
 parser.add_argument('-l', '--list', help='List all current drafts', action='store_true')
 parser.add_argument('-s', '--serve', help='Serve the blog website with drafts', action='store_true')
 parser.add_argument('-d','--delete', help='Delete a draft', action='store_true')
+parser.add_argument('--push', help='git push when committing changes')
 parser.add_argument('--version', action='version', version=f"%(prog)s {__version__}")
 args = parser.parse_args()
 
@@ -69,6 +70,8 @@ if args.post:
         filename_new = str(date.today()) + "-" + filename
         os.system("mv " + blog_folder + draft_dir + "/" + filename + " " + blog_folder + post_dir + "/" + filename_new)
         os.system("git add " + post_dir + "/" + filename_new + " && git commit -m \"Post " + filename_new + "\"")
+        if args.push:
+            os.system("git push")
         print("Posted " + blog_folder + draft_dir + "/" + filename_new)
         exit(0)
 
@@ -82,3 +85,15 @@ cmd_open = os.environ['EDITOR'] + " " + blog_folder + draft_dir + "/" + filename
 
 print("Opening " + blog_folder + draft_dir + "/" + filename + " with " + os.environ['EDITOR'])
 os.system(cmd_open)
+
+diff = subprocess.check_output("git diff --name-only HEAD", shell=True, universal_newlines=True).split('\n')[:-1]
+untracked = subprocess.check_output("git ls-files . --exclude-standard --others", shell=True, universal_newlines=True).split('\n')[:-1]
+
+# print("diff:", diff)
+# print("untracked:", untracked)
+
+if draft_dir + "/" + filename in diff or draft_dir + "/" + filename in untracked:
+    print("Commiting " + args.post_title)
+    os.system("git add " + draft_dir + "/" + filename + " && git commit -m \"Save draft " + filename + "\"")
+    if args.push:
+        os.system("git push")
