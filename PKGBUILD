@@ -10,7 +10,7 @@ license=('GPL3')
 depends=('python' 'python-argparse')
 makedepends=('python')
 source=("${pkgname}"-"${pkgver}".tar.gz::${url}/archive/${pkgver}.tar.gz)
-sha256sums=('54cd0b6d20c5b5e67fc57e2f712e837e536d2356d644af3981a2e7a9e126f876')
+sha256sums=('f51a77677b90106e5fbc9c6230f46134bdad380e73b84d272550d730be9c4dd7')
 
 package() {
     cd "${srcdir}"/"${pkgname}"-"${pkgver}"
