@@ -7,7 +7,7 @@ import argparse
 from datetime import date
 from simple_term_menu import TerminalMenu
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 parser = argparse.ArgumentParser()
 parser.add_argument('post_title', nargs='?', help='Name of the blog post (without date or file ext)')
@@ -58,7 +58,7 @@ else:
     if not args.post_title:
         # print("ERROR: post_title is required!")
         # exit(1)
-        terminal_menu = TerminalMenu(drafts, preview_command="bat --color=always " + draft_dir + "/{}", preview_size=0.75)
+        terminal_menu = TerminalMenu(drafts, preview_command="bat --color=always " + draft_dir + "/{}", preview_size=0.25)
         filenum = terminal_menu.show()
         if filenum is None:
             exit(1)
@@ -110,7 +110,7 @@ untracked = subprocess.check_output("git ls-files . --exclude-standard --others"
 # print("untracked:", untracked)
 
 if draft_dir + "/" + filename in diff or draft_dir + "/" + filename in untracked:
-    print("Commiting " + args.post_title)
+    print("Commiting " + filename)
     os.system("git add " + draft_dir + "/" + filename + " && git commit -m \"Save draft " + filename + "\"")
     if args.push:
         os.system("git push")
